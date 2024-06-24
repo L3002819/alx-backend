@@ -52,4 +52,3 @@ print(res)  # (0, 7)
 
 res = index_range(3, 15)
 print(res)  # (30, 45)
-
