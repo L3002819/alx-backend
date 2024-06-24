@@ -5,17 +5,8 @@ Deletion-resilient hypermedia pagination
 
 import csv
 import math
-from typing import List, Dict
+from typing import Dict, List
 
-def index_range(page: int, page_size: int) -> tuple:
-    """
-    Returns a tuple containing a start index and an end index
-    corresponding to the range of indexes to return in a list for
-    those particular pagination parameters.
-    """
-    start_index = (page - 1) * page_size
-    end_index = page * page_size
-    return (start_index, end_index)
 
 class Server:
     """Server class to paginate a database of popular baby names.
@@ -42,28 +33,29 @@ class Server:
         """
         if self.__indexed_dataset is None:
             dataset = self.dataset()
+            truncated_dataset = dataset[:1000]
             self.__indexed_dataset = {
                 i: dataset[i] for i in range(len(dataset))
             }
         return self.__indexed_dataset
 
     def get_hyper_index(self, index: int = None, page_size: int = 10) -> Dict:
-        """Returns a dictionary with pagination metadata"""
-        assert isinstance(index, int) and 0 <= index < len(self.indexed_dataset())
-        assert isinstance(page_size, int) and page_size > 0
-
-        dataset = self.indexed_dataset()
+        """Return dictionary of appropriate page."""
+        indexed_dataset = self.indexed_dataset()
+        total_size = len(indexed_dataset)
+        assert 0 <= index and index < total_size
+        actual_size = 0
         data = []
-        next_index = index
-
-        while len(data) < page_size and next_index < len(dataset):
-            if next_index in dataset:
-                data.append(dataset[next_index])
-            next_index += 1
+        start = index
+        while index < total_size and actual_size < page_size:
+            if indexed_dataset.get(index) is not None:
+                data.append(indexed_dataset.get(index))
+                actual_size += 1
+            index += 1
 
         return {
-            'index': index,
-            'next_index': next_index,
-            'page_size': len(data),
-            'data': data
+            'index': start,
+            'data': data,
+            'page_size': actual_size,
+            'next_index': index
         }
